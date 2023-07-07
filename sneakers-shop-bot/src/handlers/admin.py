@@ -1,7 +1,7 @@
 from aiogram.dispatcher import FSMContext
 
 from src.misc import dp
-from src import states
+from src import states, messages
 from aiogram import types
 import db
 from src.modules.bot_helpers import unknown_message_reply
@@ -35,5 +35,13 @@ async def get_admins(message: types.Message):
     if await db.is_admin(message.from_user.id):
         admins = await db.get_admins()
         await message.answer("<b>Администраторы:</b>\n" + '\n'.join(map(str, admins)))
+    else:
+        await unknown_message_reply(message)
+
+
+@dp.message_handler(commands=['admin', 'adm'])
+async def admin_help_cmd(message: types.Message):
+    if await db.is_admin(message.from_user.id):
+        await message.answer(messages.admin.help)
     else:
         await unknown_message_reply(message)

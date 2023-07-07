@@ -12,6 +12,23 @@ from src.states import AssortmentStates
 from src import keyboards as kb
 
 
+@dp.message_handler(commands='add_brand')
+async def add_brand_cmd(message: types.Message):
+    if await db.is_admin(message.from_user.id):
+        await message.answer("Напишите бренд, который хотите добавить")
+        await AssortmentStates.add_brand.set()
+    else:
+        await unknown_message_reply(message)
+
+
+@dp.message_handler(state=AssortmentStates.add_brand)
+async def add_brand(message: types.Message, state: FSMContext):
+    brand = message.text
+    await db.add_brand(brand)
+    await message.answer("Бренд успешно добавлен")
+    await state.finish()
+
+
 @dp.message_handler(commands='add_model')
 async def add_model_cmd(message: types.Message):
     if await db.is_admin(message.from_user.id):
@@ -76,12 +93,14 @@ async def photos_addition_finish(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands='add_stock')
 async def add_stock_cmd(message: types.Message, state: FSMContext):
-    brands = await db.get_brands()
+    if await db.is_admin(message.from_user.id):
+        brands = await db.get_brands()
 
-    kb_ = kb.create_brands_ikb(brands, manipulation=True)
-    await AssortmentStates.add_stock.set()
-    await message.answer("Выберите фирму кроссовок", reply_markup=kb_)
-
+        kb_ = kb.create_brands_ikb(brands, manipulation=True)
+        await AssortmentStates.add_stock.set()
+        await message.answer("Выберите фирму кроссовок", reply_markup=kb_)
+    else:
+        await unknown_message_reply(message)
 
 brand_regex = "choose_([^_]*)_assortment"
 
