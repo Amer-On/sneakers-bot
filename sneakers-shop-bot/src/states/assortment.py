@@ -9,3 +9,6 @@ class AssortmentStates(StatesGroup):
     add_photos_brand = State()
     add_photos_model = State()
     add_photos = State()
+
+    add_stock = State()
+    add_stock_manipulation = State()

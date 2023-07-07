@@ -60,18 +60,83 @@ async def add_photos(message: types.Message, state: FSMContext):
             logging.debug(f"Some exception {e} occurred while saving photo")
 
 
-@dp.message_handler(lambda message: message.text == 'Назад', state=AssortmentStates.add_photos)
+@dp.message_handler(lambda message: message.text == 'Назад',
+                    state=AssortmentStates.add_photos)
 async def photos_addition_finish(message: types.Message, state: FSMContext):
     await message.answer("Добавление фото завершено", reply_markup=kb.menu)
     await state.finish()
 
 
-@dp.message_handler(state=AssortmentStates.add_photos)
-async def photos_addition_finish(message: types.Message):
-    await message.answer("Пожалуйста отправьте фото или нажмите кнопку назад")
+@dp.message_handler(lambda message: message.text == 'Назад',
+                    state=AssortmentStates.add_stock_manipulation)
+async def photos_addition_finish(message: types.Message, state: FSMContext):
+    await message.answer("Добавление стока завершено", reply_markup=kb.menu)
+    await state.finish()
+
+
+@dp.message_handler(commands='add_stock')
+async def add_stock_cmd(message: types.Message, state: FSMContext):
+    brands = await db.get_brands()
+
+    kb_ = kb.create_brands_ikb(brands, manipulation=True)
+    await AssortmentStates.add_stock.set()
+    await message.answer("Выберите фирму кроссовок", reply_markup=kb_)
 
 
 brand_regex = "choose_([^_]*)_assortment"
+
+
+@dp.callback_query_handler(regexp=brand_regex, state=AssortmentStates.add_stock)
+async def add_stock_choose_model(callback: types.CallbackQuery):
+    brand = re.search(brand_regex, callback.data).group(1)
+    models = tuple(el[1] for el in await db.get_models(brand))
+    kb_ = kb.create_models_ikb(brand, models)
+    await callback.message.answer("Выбери модель, для которой хочешь добавить ассортимент", reply_markup=kb_)
+    await callback.answer()
+
+
+@dp.callback_query_handler(regexp=brand_regex, state=AssortmentStates.add_stock)
+async def add_stock_brand(callback: types.CallbackQuery):
+    brand = re.search(brand_regex, callback.data).group(1)
+    models = tuple(el[1] for el in await db.get_models(brand))
+    kb_ = kb.create_models_ikb(brand, models)
+    await callback.message.answer("Выбери модель, для которой хочешь добавить сток", reply_markup=kb_)
+    await callback.answer()
+
+
+model_regex = "get_([^_]*)_([^_]*)_assortment"
+
+
+@dp.callback_query_handler(regexp=model_regex, state=AssortmentStates.add_stock)
+async def add_stock_model(callback: types.CallbackQuery, state: FSMContext):
+    brand, model = re.search(model_regex, callback.data).groups()
+    async with state.proxy() as data:
+        data['brand'] = brand
+        data['model'] = model
+
+    await AssortmentStates.add_stock_manipulation.set()
+    await callback.message.answer(
+        "Введите размер и количество поставленных кроссовок через пробел (размер количество)\n"
+        "Если хотите уменьшить ассортимент, введите отрицательное количество", reply_markup=kb.back_kb)
+    await callback.answer()
+
+
+@dp.message_handler(state=AssortmentStates.add_stock_manipulation)
+async def add_stock(message: types.Message, state: FSMContext):
+    try:
+        size, amount = map(int, message.text.split())
+        async with state.proxy() as data:
+            brand = data['brand']
+            model = data['model']
+        await db.add_stock(brand, model, size, amount)
+        await message.answer("Запас увеличен")
+    except:
+        await message.answer("Некорректные данные")
+
+
+@dp.message_handler(state=AssortmentStates.add_photos)
+async def photos_addition_finish(message: types.Message):
+    await message.answer("Пожалуйста отправьте фото или нажмите кнопку назад")
 
 
 @dp.callback_query_handler(regexp=brand_regex, state=AssortmentStates.add_photos_brand)
@@ -95,9 +160,6 @@ async def add_model_query(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-model_regex = "get_([^_]*)_([^_]*)_assortment"
-
-
 @dp.callback_query_handler(regexp=model_regex, state=AssortmentStates.add_photos_model)
 async def add_model_photos(callback: types.CallbackQuery, state: FSMContext):
     brand, model = re.search(model_regex, callback.data).groups()
@@ -108,4 +170,3 @@ async def add_model_photos(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer("Отправьте фотографии, которые хотите прикрепить", reply_markup=kb.back_kb)
     await callback.answer()
     await AssortmentStates.add_photos.set()
-

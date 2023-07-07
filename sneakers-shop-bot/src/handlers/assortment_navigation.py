@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 import re
@@ -36,12 +38,16 @@ model_regex = "get_([^_]*)_([^_]*)_assortment"
 async def model_assortment(callback: types.CallbackQuery):
     brand, model = re.search(model_regex, callback.data).groups()
 
-    photos = await db.get_photos(brand, model)
+    photos_task = asyncio.create_task(db.get_photos(brand, model))
+    sizes_task = asyncio.create_task(db.get_stock_size(brand, model))
+
+    photos, sizes = await asyncio.gather(photos_task, sizes_task)
+
     media = types.MediaGroup()
     for el in photos:
         media.attach_photo(photo=el)
 
     await callback.message.answer_media_group(media)
-    await callback.message.answer(f"{brand} {model}\nAvailable sizes: 36-40",
+    await callback.message.answer(f"{brand} {model}\nAvailable sizes: {', '.join(map(str, sizes))}",
                                   reply_markup=kb.form_delete_message_button(len(photos)))
     await callback.answer()

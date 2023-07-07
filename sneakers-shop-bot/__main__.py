@@ -10,6 +10,7 @@ async def on_startup():
     await db.create_brands_table()
     await db.create_models_table()
     await db.create_photos_table()
+    await db.create_stock_table()
 
 
 def main():
