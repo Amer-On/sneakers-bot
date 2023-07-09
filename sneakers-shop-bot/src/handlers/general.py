@@ -4,7 +4,7 @@ from src.misc import dp, bot
 from aiogram import types
 import logging
 from .. import messages
-from ..modules.bot_helpers import update_text, unknown_message_reply
+from ..modules.bot_helpers import update_text
 
 from .. import keyboards as kb
 
@@ -20,9 +20,9 @@ async def cancel(message: types.Message, state: FSMContext):
     await message.answer('Отмена действия')
 
 
-@dp.message_handler()
-async def general(message: types.Message):
-    await unknown_message_reply(message)
+@dp.message_handler(commands='faq')
+async def faq_cmd(message: types.Message):
+    await message.answer(messages.faq)
 
 
 @dp.callback_query_handler(text_startswith="delete_message_", state='*')
