@@ -47,7 +47,46 @@ async def model_assortment(callback: types.CallbackQuery):
     for el in photos:
         media.attach_photo(photo=el)
 
+    kb_ = kb.create_order_ikb(brand, model, len(photos))
+
     await callback.message.answer_media_group(media)
     await callback.message.answer(f"{brand} {model}\nAvailable sizes: {', '.join(map(str, sizes))}",
-                                  reply_markup=kb.form_delete_message_button(len(photos)))
+                                  reply_markup=kb_)
     await callback.answer()
+
+
+order_regex = "order_([^_]*)_([^_]*)_create"
+
+
+@dp.callback_query_handler(regexp=order_regex)
+async def order_choose_size(callback: types.CallbackQuery):
+    asyncio.create_task(callback.answer())
+    brand, model = re.search(order_regex, callback.data).groups()
+    sizes = await db.get_stock_size(brand, model)
+
+    msg_txt = f"""
+    Выберите размер кроссовок {brand} {model}
+    """
+    kb_ = kb.create_sizes_ikb(sizes, brand, model)
+
+    await callback.message.answer(msg_txt, reply_markup=kb_)
+
+
+sizes_regex = 'order_([^_]*)_([^_]*)_([^_]*)_assortment'
+
+
+@dp.callback_query_handler(regexp=sizes_regex)
+async def order_model(callback: types.CallbackQuery):
+    asyncio.create_task(callback.message.delete())
+    asyncio.create_task(callback.answer())
+
+    brand, model, size = re.search(sizes_regex, callback.data).groups()
+
+    order_id = await db.create_order(callback.from_user.id, brand, model, size)
+    msg_txt = f"""<b>Заказ №{order_id} успешно создан!</b>\n\n<b>Детали заказа:</b>
+<em>Бренд:</em> {brand}
+<em>Модель:</em> {model}
+<em>Размер:</em> {size}
+    """
+
+    await callback.message.answer(msg_txt)

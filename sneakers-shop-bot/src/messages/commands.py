@@ -5,6 +5,9 @@ callbacks_and_commands = {
 
 delete_message = "Закрыть ❌"
 remove_keyboard = "Убрать клавиатуру"
+order = "Заказать"
+back = 'Назад'
+cancel = 'Отмена'
 
 
 # CALLBACK DATA FORMERS
@@ -22,3 +25,11 @@ def manipulation_brands_callback_data(brand: str):
 
 def navigation_models_callback_data(model: str, brand: str):
     return f"get_{brand}_{model}_assortment"
+
+
+def order_create_callback_data(brand: str, model: str):
+    return f"order_{brand}_{model}_create"
+
+
+def sizes_callback_data(size: int, brand: str, model: str):
+    return f"order_{brand}_{model}_{size}_assortment"

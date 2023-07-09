@@ -11,6 +11,8 @@ async def on_startup():
     await db.create_models_table()
     await db.create_photos_table()
     await db.create_stock_table()
+    await db.create_orders_statuses()
+    await db.create_orders_table()
 
 
 def main():
