@@ -15,6 +15,14 @@ def create_brands_ikb(companies: Collection, manipulation: bool = False):
     return create_ikb(companies, commands.navigation_brands_callback_data)
 
 
+def create_models_stock_ikb(brand: str, models: Collection[str]):
+    return create_ikb(models, commands.stock_models_callback_data, brand)
+
+
+def create_brands_stock_ikb(companies: Collection):
+    return create_ikb(companies, commands.stock_brands_callback_data)
+
+
 def create_sizes_ikb(sizes: Collection, brand, model):
     sizes_ikb = create_ikb(sizes, commands.sizes_callback_data, brand, model)
     sizes_ikb.add(form_delete_message_button(text=commands.cancel))

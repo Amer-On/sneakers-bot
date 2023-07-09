@@ -23,6 +23,14 @@ def manipulation_brands_callback_data(brand: str):
     return f"choose_{brand}_assortment"
 
 
+def stock_brands_callback_data(brand: str):
+    return f"update_{brand}_stock"
+
+
+def stock_models_callback_data(model: str, brand: str):
+    return f"update_{brand}_{model}_stock"
+
+
 def navigation_models_callback_data(model: str, brand: str):
     return f"get_{brand}_{model}_assortment"
 

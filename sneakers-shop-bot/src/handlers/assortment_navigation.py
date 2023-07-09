@@ -14,7 +14,7 @@ from ..modules.bot_helpers import update_text
 
 @dp.message_handler(lambda x: x.text == callbacks_and_commands['assortment_navigation'])
 async def assortment(message: types.Message, state: FSMContext):
-    brands = await db.get_brands()
+    brands = await db.get_stock_brands()
     _kb = kb.create_brands_ikb(brands)
     await message.answer(messages.assortment, reply_markup=_kb)
 
@@ -25,7 +25,7 @@ brand_regex = "get_([^_]*)_assortment"
 @dp.callback_query_handler(regexp=brand_regex)
 async def company_assortment(callback: types.CallbackQuery):
     brand = re.search(brand_regex, callback.data).group(1)
-    models = tuple(el[1] for el in await db.get_models(brand))
+    models = await db.get_stock_models(brand)
     _kb = kb.create_models_ikb(brand, models)
     await update_text(callback.message, f"{brand} MODELS", keyboard=_kb)
     await callback.answer()
@@ -50,7 +50,7 @@ async def model_assortment(callback: types.CallbackQuery):
     kb_ = kb.create_order_ikb(brand, model, len(photos))
 
     await callback.message.answer_media_group(media)
-    await callback.message.answer(f"{brand} {model}\nAvailable sizes: {', '.join(map(str, sizes))}",
+    await callback.message.answer(f"{brand} {model}\nДоступные размеры: {', '.join(map(str, sizes))}",
                                   reply_markup=kb_)
     await callback.answer()
 
