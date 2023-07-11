@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import suppress
 
 from aiogram import types
@@ -6,6 +8,7 @@ from aiogram.types.message import ContentType
 
 from src import messages
 from src.misc import bot
+import db
 
 
 async def update_text(message: types.Message, text, keyboard=None):
@@ -32,3 +35,10 @@ async def remove_reply_keyboard(chat_id: int,
 
 async def unknown_message_reply(message: types.Message):
     await message.answer(messages.unknown)
+
+
+async def notify_admins(message_text: str):
+    admins = await db.get_admins()
+    for admin in admins:
+        asyncio.create_task(bot.send_message(admin, message_text))
+    logging.info("Admins notified")

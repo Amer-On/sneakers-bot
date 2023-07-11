@@ -13,6 +13,8 @@ async def on_startup():
     await db.create_stock_table()
     await db.create_orders_statuses()
     await db.create_orders_table()
+    await db.create_payment_methods_table()
+    await db.create_settings_table()
 
 
 def main():

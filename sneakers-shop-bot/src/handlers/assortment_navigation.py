@@ -1,10 +1,12 @@
 import asyncio
+import collections
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 import re
 
 import db
+from src.modules.bot_helpers import notify_admins
 from ..misc import dp
 from ..messages.commands import callbacks_and_commands
 from .. import keyboards as kb
@@ -43,13 +45,17 @@ async def model_assortment(callback: types.CallbackQuery):
 
     photos, sizes = await asyncio.gather(photos_task, sizes_task)
 
-    media = types.MediaGroup()
-    for el in photos:
-        media.attach_photo(photo=el)
+    n = 1
+    if photos:
+        media = types.MediaGroup()
+        for el in photos:
+            media.attach_photo(photo=el)
 
-    kb_ = kb.create_order_ikb(brand, model, len(photos))
+        await callback.message.answer_media_group(media)
+        n += len(photos)
 
-    await callback.message.answer_media_group(media)
+    kb_ = kb.create_order_ikb(brand, model, n)
+
     await callback.message.answer(f"{brand} {model}\nДоступные размеры: {', '.join(map(str, sizes))}",
                                   reply_markup=kb_)
     await callback.answer()
@@ -88,5 +94,20 @@ async def order_model(callback: types.CallbackQuery):
 <em>Модель:</em> {model}
 <em>Размер:</em> {size}
     """
-
     await callback.message.answer(msg_txt)
+
+    user_settings = await db.get_user_settings(callback.from_user.id)
+    admins_message_text = f"""<b>Получен новый Заказ №{order_id}!</b>\n\n<b>Детали заказа:</b>
+<em>Бренд:</em> {brand}
+<em>Модель:</em> {model}
+<em>Размер:</em> {size}
+    
+<b>Покупатель</b>
+<em>Имя: {user_settings['nominal']}</em>
+<em>Ссылка на пользователя: {user_settings['username']}</em>
+<em>Номер телефона: {user_settings['phone']}</em>
+<em>Адрес: {user_settings['address']}</em>
+<em>Метод оплаты: {user_settings['payment_method']}</em>
+"""
+
+    asyncio.create_task(notify_admins(admins_message_text))

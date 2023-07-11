@@ -1,5 +1,6 @@
 from aiogram.dispatcher import FSMContext
 
+import db
 from src.misc import dp, bot
 from aiogram import types
 import logging
@@ -11,7 +12,10 @@ from .. import keyboards as kb
 
 @dp.message_handler(commands='start')
 async def start(message: types.Message):
-    await message.answer(messages.greeting, reply_markup=kb.menu)
+    if not db.get_user_settings(message.from_user.id):
+        await message.answer(messages.greeting, reply_markup=kb.menu)
+    else:
+        await message.answer("Добро пожаловать", reply_markup=kb.menu)
 
 
 @dp.message_handler(commands='cancel', state='*')
@@ -29,8 +33,7 @@ async def faq_cmd(message: types.Message):
 async def delete_message(callback: types.CallbackQuery):
     to_remove = int(callback.data.split('_')[-1])
     for i in range(to_remove):
-        await bot.delete_message(callback.from_user.id, callback.message.message_id - i - 1)
-    await callback.message.delete()
+        await bot.delete_message(callback.from_user.id, callback.message.message_id - i)
     await callback.answer()
 
 

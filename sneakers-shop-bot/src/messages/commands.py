@@ -1,6 +1,7 @@
 callbacks_and_commands = {
-    "assortment_search": "Поиск по ассортименту",
-    "assortment_navigation": "Выбрать из ассортимента",
+    # "assortment_search": "Поиск по ассортименту",
+    "assortment_navigation": "Посмотреть ассортимент",
+    "settings": "Изменить настройки"
 }
 
 delete_message = "Закрыть ❌"
