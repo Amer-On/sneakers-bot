@@ -5,7 +5,7 @@ from .conf import TABLE_NAME
 @connect_to_db
 async def create_table(conn: asyncpg.Connection):
     await conn.execute(
-        f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (user_id INT PRIMARY KEY, is_admin BOOl DEFAULT FALSE)")
+        f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} (user_id BIGINT PRIMARY KEY, is_admin BOOl DEFAULT FALSE)")
 
 
 async def add_user(user_id: int,

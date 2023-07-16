@@ -66,6 +66,12 @@ order_regex = "order_([^_]*)_([^_]*)_create"
 
 @dp.callback_query_handler(regexp=order_regex)
 async def order_choose_size(callback: types.CallbackQuery):
+    if not await db.get_user_settings(callback.from_user.id):
+        await callback.message.answer(messages.ask_to_register, reply_markup=kb.apply_registration)
+        return
+
+
+
     asyncio.create_task(callback.answer())
     brand, model = re.search(order_regex, callback.data).groups()
     sizes = await db.get_stock_size(brand, model)

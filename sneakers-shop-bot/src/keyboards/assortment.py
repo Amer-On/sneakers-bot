@@ -4,6 +4,11 @@ from typing import Callable
 from ..messages import commands
 from .general import form_delete_message_button
 
+from src import messages
+
+apply_registration = InlineKeyboardMarkup().add(
+    InlineKeyboardButton(messages.apply_registration, callback_data='apply_registration'))
+
 
 def create_models_ikb(brand: str, models: Collection[str]):
     return create_ikb(models, commands.navigation_models_callback_data, brand)

@@ -42,3 +42,8 @@ async def notify_admins(message_text: str):
     for admin in admins:
         asyncio.create_task(bot.send_message(admin, message_text))
     logging.info("Admins notified")
+
+
+async def delete_messages(user_id: int, message_id: int, to_remove: int = 1):
+    for i in range(to_remove):
+        await bot.delete_message(user_id, message_id - i)

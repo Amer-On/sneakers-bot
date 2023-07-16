@@ -25,7 +25,7 @@ async def create_orders_table(conn: asyncpg.Connection):
     await conn.execute(
         f'''
         CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-        user_id INT,
+        user_id BIGINT,
         order_id SERIAL,
         
         brand VARCHAR,

@@ -23,6 +23,7 @@ async def add_admin(message: types.Message):
 
 @dp.message_handler(state=states.AdminStates.add_admin)
 async def add_admin(message: types.Message, state: FSMContext):
+    print(message)
     user_id = message.forward_from.id
     if not await db.add_user(user_id, is_admin=True):
         await db.make_admin(user_id)

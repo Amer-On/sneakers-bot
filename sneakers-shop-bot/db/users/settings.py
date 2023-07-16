@@ -23,7 +23,7 @@ async def create_payment_methods_table(conn: asyncpg.Connection):
 @connect_to_db
 async def create_settings_table(conn: asyncpg.Connection):
     await conn.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-    user_id INT,
+    user_id BIGINT,
     username VARCHAR,
     -- nominal - Имя пользователя
     nominal VARCHAR, 

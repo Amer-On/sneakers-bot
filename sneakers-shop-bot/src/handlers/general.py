@@ -12,10 +12,7 @@ from .. import keyboards as kb
 
 @dp.message_handler(commands='start')
 async def start(message: types.Message):
-    if not db.get_user_settings(message.from_user.id):
-        await message.answer(messages.greeting, reply_markup=kb.menu)
-    else:
-        await message.answer("Добро пожаловать", reply_markup=kb.menu)
+    await message.answer(messages.greeting, reply_markup=kb.menu)
 
 
 @dp.message_handler(commands='cancel', state='*')
