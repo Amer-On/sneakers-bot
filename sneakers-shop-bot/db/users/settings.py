@@ -21,6 +21,20 @@ async def create_payment_methods_table(conn: asyncpg.Connection):
 
 
 @connect_to_db
+async def create_contact_methods_table(conn: asyncpg.Connection):
+    await conn.execute("DROP TABLE IF EXISTS contact_method CASCADE")
+    await conn.execute(f"""CREATE TABLE IF NOT EXISTS contact_method (
+    contact VARCHAR,
+    CONSTRAINT pk_contact_method PRIMARY KEY ( contact )
+    );""")
+
+    await conn.execute(f"INSERT INTO contact_method VALUES ($1)", 'any')
+    await conn.execute(f"INSERT INTO contact_method VALUES ($1)", 'telegram')
+    await conn.execute(f"INSERT INTO contact_method VALUES ($1)", 'phone')
+    await conn.execute(f"INSERT INTO contact_method VALUES ($1)", 'whatsapp')
+
+
+@connect_to_db
 async def create_settings_table(conn: asyncpg.Connection):
     await conn.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
     user_id BIGINT,
@@ -30,8 +44,10 @@ async def create_settings_table(conn: asyncpg.Connection):
     phone VARCHAR,
     address VARCHAR,
     payment_method VARCHAR,
+    contact_method VARCHAR,
     FOREIGN KEY (user_id) REFERENCES {conf.TABLE_NAME} (user_id),
     FOREIGN KEY (payment_method) REFERENCES payment_method (payment),
+    FOREIGN KEY (contact_method) REFERENCES contact_method (contact),
     CONSTRAINT pk_{TABLE_NAME} PRIMARY KEY ( user_id )
     );""")
 
@@ -41,8 +57,9 @@ async def add_user_settings(user_id: int,
                             nominal: str,
                             phone: str,
                             address: str,
-                            payment_method: str):
-    await insert(TABLE_NAME, (user_id, username, nominal, phone, address, payment_method))
+                            payment_method: str,
+                            contact_method: str = 'any'):
+    await insert(TABLE_NAME, (user_id, username, nominal, phone, address, payment_method, contact_method))
 
 
 @connect_to_db
@@ -56,6 +73,9 @@ async def update_user_settings(conn: asyncpg.Connection,
                                nominal: str,
                                phone: str,
                                address: str,
-                               payment_method: str):
-    await conn.execute(f"UPDATE {TABLE_NAME} SET nominal = $2, phone = $3, address = $4, payment_method = $5 WHERE user_id = $1",
-                       user_id, nominal, phone, address, payment_method)
+                               payment_method: str,
+                               contact_method: str = 'any'):
+    await conn.execute(
+        f"UPDATE {TABLE_NAME} SET nominal = $2, phone = $3, address = $4, payment_method = $5,"
+        f" contact_method = $6 WHERE user_id = $1",
+        user_id, nominal, phone, address, payment_method, contact_method)

@@ -42,3 +42,8 @@ def order_create_callback_data(brand: str, model: str):
 
 def sizes_callback_data(size: int, brand: str, model: str):
     return f"order_{brand}_{model}_{size}_assortment"
+
+
+def contact_method_callback_data(contact_method: str):
+    return f"settings_contact_{contact_method}"
+

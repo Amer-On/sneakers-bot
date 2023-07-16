@@ -47,3 +47,9 @@ async def notify_admins(message_text: str):
 async def delete_messages(user_id: int, message_id: int, to_remove: int = 1):
     for i in range(to_remove):
         await bot.delete_message(user_id, message_id - i)
+
+
+async def remove_keyboard(message: types.Message, message_text: str | None = None):
+    if not message_text:
+        message_text = message.text
+    await update_text(message, message_text, keyboard=None)
