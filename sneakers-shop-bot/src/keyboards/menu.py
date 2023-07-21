@@ -9,7 +9,7 @@ from ..messages import commands
 #     )
 
 
-menu = ReplyKeyboardMarkup()
+menu = ReplyKeyboardMarkup(resize_keyboard=True)
 for command in commands.callbacks_and_commands.values():
     menu.add(command)
 
