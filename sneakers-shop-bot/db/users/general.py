@@ -18,3 +18,11 @@ async def add_user(user_id: int,
     except:
         logging.error("Unknown error")
     return False
+
+
+@connect_to_db
+async def add_user_if_not_exists(conn: asyncpg.Connection, user_id: int, is_admin: bool = False):
+    try:
+        await conn.execute(f"INSERT INTO {TABLE_NAME} VALUES ($1, $2)", user_id, is_admin)
+    except:
+        pass

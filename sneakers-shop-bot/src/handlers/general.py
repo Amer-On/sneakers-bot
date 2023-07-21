@@ -15,7 +15,7 @@ from .. import keyboards as kb
 
 @dp.message_handler(commands='start')
 async def start(message: types.Message):
-    await db.add_user(message.from_user.id, False)
+    await db.add_user_if_not_exists(message.from_user.id, False)
     await message.answer(messages.greeting, reply_markup=kb.menu)
 
 
