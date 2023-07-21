@@ -42,8 +42,9 @@ async def model_assortment(callback: types.CallbackQuery):
 
     photos_task = asyncio.create_task(db.get_photos(brand, model))
     sizes_task = asyncio.create_task(db.get_stock_size(brand, model))
+    price_task = asyncio.create_task(db.get_price(brand, model))
 
-    photos, sizes = await asyncio.gather(photos_task, sizes_task)
+    photos, sizes, price = await asyncio.gather(photos_task, sizes_task, price_task)
 
     n = 1
     if photos:
@@ -56,8 +57,10 @@ async def model_assortment(callback: types.CallbackQuery):
 
     kb_ = kb.create_order_ikb(brand, model, n)
 
-    await callback.message.answer(f"{brand} {model}\nДоступные размеры: {', '.join(map(str, sizes))}",
-                                  reply_markup=kb_)
+    await callback.message.answer(
+        f"{brand} {model}\nДоступные размеры: {', '.join(map(str, sizes))}\n"
+        f"Стоимость: <b>{str(price) + ' руб.' if price else 'Неизвестно'}</b>",
+        reply_markup=kb_)
     await callback.answer()
 
 
@@ -91,12 +94,14 @@ async def order_model(callback: types.CallbackQuery):
     asyncio.create_task(callback.answer())
 
     brand, model, size = re.search(sizes_regex, callback.data).groups()
+    price = await db.get_price(brand, model)
 
     order_id = await db.create_order(callback.from_user.id, brand, model, size)
     msg_txt = f"""<b>Заказ №{order_id} успешно создан!</b>\n\n<b>Детали заказа:</b>
 <em>Бренд:</em> {brand}
 <em>Модель:</em> {model}
 <em>Размер:</em> {size}
+<em>Стоимость:</em> <b>{str(price) + " руб." if price else "Неизвестно"}</b>
     """
     await callback.message.answer(msg_txt)
 
@@ -105,6 +110,7 @@ async def order_model(callback: types.CallbackQuery):
 <em>Бренд:</em> {brand}
 <em>Модель:</em> {model}
 <em>Размер:</em> {size}
+<em>Стоимость:</em> <b>{price} руб.</b>
     
 <b>Покупатель</b>
 <em>Имя: {user_settings['nominal']}</em>

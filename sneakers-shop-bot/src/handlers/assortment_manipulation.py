@@ -7,7 +7,7 @@ from aiogram.dispatcher import FSMContext
 
 import db
 from src.misc import dp
-from src.modules.bot_helpers import unknown_message_reply
+from src.modules.bot_helpers import unknown_message_reply, remove_reply_keyboard
 from src.states import AssortmentStates
 from src import keyboards as kb
 
@@ -68,11 +68,23 @@ async def add_model(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(commands='add_photos')
-async def add_photos_cmd(message):
+async def add_photos_cmd(message: types.Message):
     if await db.is_admin(message.from_user.id):
         brands = await db.get_brands()
         kb_ = kb.create_brands_ikb(brands, manipulation=True)
         await AssortmentStates.add_photos_brand.set()
+        await message.answer("Выберите фирму кроссовок", reply_markup=kb_)
+    else:
+        await unknown_message_reply(message)
+
+
+@dp.message_handler(commands='add_price')
+async def add_price_cmd(message: types.Message):
+    if await db.is_admin(message.from_user.id):
+        brands = await db.get_brands()
+        kb_ = kb.create_prices_ikb(brands)
+        await AssortmentStates.add_price.set()
+        await remove_reply_keyboard(message.from_user.id)
         await message.answer("Выберите фирму кроссовок", reply_markup=kb_)
     else:
         await unknown_message_reply(message)
@@ -103,6 +115,15 @@ async def add_stock_cmd(message: types.Message, state: FSMContext):
 
 
 brand_regex = "choose_([^_]*)_assortment"
+
+
+@dp.callback_query_handler(regexp=brand_regex, state=AssortmentStates.add_price)
+async def add_price_choose_model(callback: types.CallbackQuery):
+    brand = re.search(brand_regex, callback.data).group(1)
+    models = tuple(el[1] for el in await db.get_models(brand))
+    kb_ = kb.create_models_ikb(brand, models)
+    await callback.message.answer("Выбери модель, для которой хочешь добавить/изменить цену", reply_markup=kb_)
+    await callback.answer()
 
 
 @dp.callback_query_handler(regexp=brand_regex, state=AssortmentStates.add_stock)
@@ -143,6 +164,37 @@ async def add_stock_model(callback: types.CallbackQuery, state: FSMContext):
         "Введите размер и количество поставленных кроссовок через пробел (размер количество)\n"
         "Если хотите уменьшить ассортимент, введите отрицательное количество", reply_markup=kb.back_kb)
     await callback.answer()
+
+
+@dp.callback_query_handler(regexp=model_regex, state=AssortmentStates.add_price)
+async def add_price_model(callback: types.CallbackQuery, state: FSMContext):
+    brand, model = re.search(model_regex, callback.data).groups()
+    async with state.proxy() as data:
+        data['brand'] = brand
+        data['model'] = model
+
+    await AssortmentStates.add_price_manipulation.set()
+    await callback.message.answer("Введите стоимость выбранной модели (число)\n", reply_markup=kb.back_kb)
+    await callback.answer()
+
+
+@dp.message_handler(state=AssortmentStates.add_price_manipulation)
+async def add_price(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        brand = data['brand']
+        model = data['model']
+
+    price = message.text
+
+    try:
+        price = int(price)
+    except:
+        await message.answer("Пожалуйста введите число")
+        return
+
+    await db.add_price(brand, model, price)
+    await state.finish()
+    await message.answer("Стоимость успешно добавлена", reply_markup=kb.menu)
 
 
 @dp.message_handler(state=AssortmentStates.add_stock_manipulation)

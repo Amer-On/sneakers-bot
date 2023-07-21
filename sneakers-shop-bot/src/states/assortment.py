@@ -12,3 +12,6 @@ class AssortmentStates(StatesGroup):
 
     add_stock = State()
     add_stock_manipulation = State()
+
+    add_price = State()
+    add_price_manipulation = State()

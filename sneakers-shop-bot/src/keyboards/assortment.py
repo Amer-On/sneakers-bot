@@ -14,6 +14,10 @@ def create_models_ikb(brand: str, models: Collection[str]):
     return create_ikb(models, commands.navigation_models_callback_data, brand)
 
 
+def create_prices_ikb(brands: Collection):
+    return create_ikb(brands, commands.manipulation_brands_callback_data)
+
+
 def create_brands_ikb(companies: Collection, manipulation: bool = False):
     if manipulation:
         return create_ikb(companies, commands.manipulation_brands_callback_data)
