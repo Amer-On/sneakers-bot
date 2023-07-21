@@ -112,6 +112,7 @@ async def order_model(callback: types.CallbackQuery):
 <em>Номер телефона: {user_settings['phone']}</em>
 <em>Адрес: {user_settings['address']}</em>
 <em>Метод оплаты: {user_settings['payment_method']}</em>
+<em>Связаться: {user_settings['contact_method']}</em>
 """
 
     asyncio.create_task(notify_admins(admins_message_text))
