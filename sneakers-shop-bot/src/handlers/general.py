@@ -25,6 +25,15 @@ async def cancel(message: types.Message, state: FSMContext):
     await message.answer('Отмена действия')
 
 
+@dp.message_handler(lambda message: message.text == 'Назад', state=RefundStates)
+async def back_handler(message: types.Message, state: FSMContext):
+    for i in range(4):
+        await bot.delete_message(message.from_user.id, message.message_id - i)
+
+    await message.answer(messages.greeting, reply_markup=kb.menu)
+    await state.finish()
+
+
 @dp.message_handler(commands='faq')
 async def faq_cmd(message: types.Message):
     await message.answer(messages.faq)
@@ -32,12 +41,18 @@ async def faq_cmd(message: types.Message):
 
 @dp.message_handler(commands='refund')
 async def refund_cmd(message: types.Message):
+    await message.answer(messages.refund_first, reply_markup=kb.refund_kb)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'refund')
+async def refund_callback(callback: types.CallbackQuery):
+    asyncio.create_task(callback.answer())
     await RefundStates.refund.set()
-    await message.answer(messages.refund)
+    await callback.message.answer(messages.refund_second, reply_markup=kb.back_kb)
 
 
 @dp.message_handler(state=RefundStates.refund)
-async def refund_cmd(message: types.Message, state: FSMContext):
+async def refund_processing_cmd(message: types.Message, state: FSMContext):
     asyncio.create_task(state.finish())
     detail = message.text
 
@@ -56,6 +71,7 @@ async def refund_cmd(message: types.Message, state: FSMContext):
 <em>Метод оплаты: {user_settings['payment_method']}</em>
 <em>Связаться: {user_settings['contact_method']}</em>    
     '''
+    await message.answer(messages.refund_success, reply_markup=kb.menu)
     await notify_admins(txt)
 
 

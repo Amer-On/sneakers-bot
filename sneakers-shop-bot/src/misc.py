@@ -11,7 +11,7 @@ except ImportError:
 
 
 if config.DEBUG:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 else:
     logging.basicConfig(filename=config.LOGGING_FILE, level=logging.INFO)
 logger = logging.getLogger()

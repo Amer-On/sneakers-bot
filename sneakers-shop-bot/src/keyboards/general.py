@@ -17,3 +17,6 @@ def form_delete_message_button(additional_messages_to_delete: int = 1, text: str
 remove_kb_button = InlineKeyboardButton(commands.remove_keyboard, callback_data="remove_keyboard")
 
 back_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton(commands.back))
+
+
+refund_kb = InlineKeyboardMarkup().add(form_delete_message_button(2, text='Хорошо👍Вернёмся к каталогу')).add(InlineKeyboardButton('У меня есть дефекты😮‍💨 Хочу вернуть', callback_data='refund'))
