@@ -68,13 +68,22 @@ order_regex = "order_([^_]*)_([^_]*)_create"
 
 
 @dp.callback_query_handler(regexp=order_regex)
-async def order_choose_size(callback: types.CallbackQuery):
+async def order_choose_size(callback: types.CallbackQuery, state: FSMContext):
     asyncio.create_task(callback.answer())
+
+    brand, model = re.search(order_regex, callback.data).groups()
     if not await db.get_user_settings(callback.from_user.id):
+        async with state.proxy() as data:
+            data['brand'] = brand
+            data['model'] = model
+
         await callback.message.answer(messages.ask_to_register, reply_markup=kb.apply_registration)
         return
 
-    brand, model = re.search(order_regex, callback.data).groups()
+    await offer_shoes(callback.message, brand, model)
+
+
+async def offer_shoes(message: types.Message, brand: str, model: str):
     sizes = await db.get_stock_size(brand, model)
 
     msg_txt = f"""
@@ -82,7 +91,7 @@ async def order_choose_size(callback: types.CallbackQuery):
     """
     kb_ = kb.create_sizes_ikb(sizes, brand, model)
 
-    await callback.message.answer(msg_txt, reply_markup=kb_)
+    await message.answer(msg_txt, reply_markup=kb_)
 
 
 sizes_regex = 'order_([^_]*)_([^_]*)_([^_]*)_assortment'

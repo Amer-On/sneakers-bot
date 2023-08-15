@@ -15,6 +15,8 @@ from src.modules import validation
 from src.modules.bot_helpers import prepare_user_settings
 import src.keyboards as kb
 from src.handlers.general import start
+from src.handlers.assortment_navigation import offer_shoes
+from src.misc import bot
 
 
 @dp.message_handler(lambda message: message.text == commands.cancel, state=SettingsStates.nominal)
@@ -38,6 +40,22 @@ async def settings_backto_phone(message: types.Message):
 
 
 @dp.message_handler(lambda x: x.text == callbacks_and_commands['settings'])
+async def change_settings(message: types.Message):
+    user_settings = await db.get_important_user_settings(message.from_user.id)
+    if user_settings:
+        user_settings = tuple(*user_settings)
+        await message.answer(prepare_user_settings(*user_settings), reply_markup=kb.register_ikb)
+    else:
+        await settings_edition(message)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'change_settings')
+async def change_settings_cb(callback: types.CallbackQuery):
+    await remove_keyboard(callback.message)
+    await change_settings(callback.message)
+
+
+@dp.message_handler(commands='change_settings')
 async def settings_edition(message: types.Message):
     await SettingsStates.nominal.set()
     await message.answer(messages.nominal,
@@ -151,12 +169,17 @@ async def confirm_settings(callback: types.CallbackQuery, state: FSMContext):
 
     user_id = callback.from_user.id
     user_link = callback.from_user.url
-    await state.finish()
     await callback.message.answer("Ваши данные успешно сохранены, приятного пользования", reply_markup=kb.menu)
     if await db.get_user_settings(user_id):
         await db.update_user_settings(user_id, nominal, phone, address, payment_method, contact_method)
     else:
         await db.add_user_settings(user_id, user_link, nominal, phone, address, payment_method, contact_method)
+
+    async with state.proxy() as data:
+        if 'model' in data and 'brand' in data:
+            brand, model = data['brand'],  data['model']
+            await offer_shoes(callback.message, brand, model)
+    await state.finish()
 
 
 @dp.callback_query_handler(lambda c: c.data == 'apply_registration')
@@ -166,7 +189,7 @@ async def settings_edition_cb(callback: types.CallbackQuery):
     await delete_messages(callback.from_user.id, callback.message.message_id)
 
 
-@dp.callback_query_handler(lambda c: c.data == 'restart_registration', state=SettingsStates.confirm)
+@dp.callback_query_handler(lambda c: c.data == 'restart_registration', state=[SettingsStates.confirm, None])
 async def settings_restart_cb(callback: types.CallbackQuery):
     asyncio.create_task(callback.answer())
     asyncio.create_task(remove_keyboard(callback.message))

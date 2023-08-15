@@ -56,12 +56,7 @@ async def remove_keyboard(message: types.Message, message_text: str | None = Non
     await update_text(message, message_text, keyboard=None)
 
 
-def prepare_user_settings(
-        nominal: str,
-        phone: str,
-        contact_method: str,
-        address: str,
-        payment_method: str):
+def prepare_user_settings(nominal: str, phone: str, contact_method: str, address: str, payment_method: str):
     return f'''Настройки пользователя ⚙️ 
 
 Имя: <em>{nominal}</em>
