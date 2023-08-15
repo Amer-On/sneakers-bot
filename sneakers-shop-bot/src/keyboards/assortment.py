@@ -10,6 +10,14 @@ apply_registration = InlineKeyboardMarkup().add(
     InlineKeyboardButton(messages.apply_registration, callback_data='apply_registration'))
 
 
+def create_search_ikb(data: Collection):
+    ikb = InlineKeyboardMarkup()
+    for el in data:
+        ikb.add(InlineKeyboardButton(' '.join(el),
+                                     callback_data=commands.navigation_models_callback_data(el[1], el[0])))
+    return ikb
+
+
 def create_models_ikb(brand: str, models: Collection[str]):
     return create_ikb(models, commands.navigation_models_callback_data, brand)
 

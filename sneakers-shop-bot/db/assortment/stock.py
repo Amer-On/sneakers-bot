@@ -47,6 +47,13 @@ async def get_stock_models(conn: asyncpg.Connection, brand: str):
 
 
 @connect_to_db
+async def search_models(conn: asyncpg.Connection, search: str):
+    res = await conn.fetch(f"SELECT (brand, model) FROM {TABLE_NAME} where LOWER(CONCAT_WS(' ', brand, model)) LIKE '%' || $1 || '%' AND amount > 0;", search)
+    return set(el[0] for el in res)
+
+
+@connect_to_db
 async def get_brand_models_by_size(conn: asyncpg.Connection, brand: str, size: int):
     res = conn.fetch(f"SELECT * FROM {TABLE_NAME} WHERE brand = $1 AND size = $2", brand, size)
     return tuple(el[0] for el in res)
+

@@ -2,11 +2,13 @@ import asyncio
 import collections
 
 from aiogram import types
+from aiogram.types import ReplyKeyboardRemove
 from aiogram.dispatcher import FSMContext
 import re
 
 import db
 from src.modules.bot_helpers import notify_admins
+from src.states import AssortmentStates
 from ..misc import dp
 from ..messages.commands import callbacks_and_commands
 from .. import keyboards as kb
@@ -14,8 +16,27 @@ from .. import messages
 from ..modules.bot_helpers import update_text
 
 
+@dp.message_handler(lambda x: x.text == callbacks_and_commands['assortment_search'])
+async def assortment_search(message: types.Message, state: FSMContext):
+    await AssortmentStates.search.set()
+    await message.answer("В ответном сообщении введите поисковую строку", reply_markup=ReplyKeyboardRemove())
+
+
+@dp.message_handler(state=AssortmentStates.search)
+async def assortment_search_back(message: types.Message, state: FSMContext):
+    data = await db.search_models(message.text.lower())
+    if data:
+        _kb = kb.create_search_ikb(data)
+        await message.answer(messages.successful_search, reply_markup=kb.menu)
+        await message.answer(messages.search_results, reply_markup=_kb)
+    else:
+        await message.answer(messages.failed_search, reply_markup=kb.menu)
+
+    await state.reset_state(with_data=False)
+
+
 @dp.message_handler(lambda x: x.text == callbacks_and_commands['assortment_navigation'])
-async def assortment(message: types.Message, state: FSMContext):
+async def assortment(message: types.Message):
     brands = await db.get_stock_brands()
     _kb = kb.create_brands_ikb(brands)
     await message.answer(messages.assortment, reply_markup=_kb)
@@ -38,8 +59,13 @@ model_regex = "get_([^_]*)_([^_]*)_assortment"
 
 @dp.callback_query_handler(regexp=model_regex)
 async def model_assortment(callback: types.CallbackQuery):
+    asyncio.create_task(callback.answer())
     brand, model = re.search(model_regex, callback.data).groups()
 
+    await model_stock(callback.message, brand, model)
+
+
+async def model_stock(message: types.Message, brand: str, model: str):
     photos_task = asyncio.create_task(db.get_photos(brand, model))
     sizes_task = asyncio.create_task(db.get_stock_size(brand, model))
     price_task = asyncio.create_task(db.get_price(brand, model))
@@ -52,16 +78,15 @@ async def model_assortment(callback: types.CallbackQuery):
         for el in photos:
             media.attach_photo(photo=el)
 
-        await callback.message.answer_media_group(media)
+        await message.answer_media_group(media)
         n += len(photos)
 
     kb_ = kb.create_order_ikb(brand, model, n)
 
-    await callback.message.answer(
+    await message.answer(
         f"{brand} {model}\nДоступные размеры: {', '.join(map(str, sizes))}\n"
         f"Стоимость: <b>{str(price) + ' руб.' if price else 'Неизвестно'}</b>",
         reply_markup=kb_)
-    await callback.answer()
 
 
 order_regex = "order_([^_]*)_([^_]*)_create"

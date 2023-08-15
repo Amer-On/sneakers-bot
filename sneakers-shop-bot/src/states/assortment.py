@@ -15,3 +15,5 @@ class AssortmentStates(StatesGroup):
 
     add_price = State()
     add_price_manipulation = State()
+
+    search = State()
