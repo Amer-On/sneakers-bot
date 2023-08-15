@@ -19,10 +19,10 @@ async def start(message: types.Message):
     await message.answer(messages.greeting, reply_markup=kb.menu)
 
 
-@dp.message_handler(commands='cancel', state='*')
+@dp.message_handler(commands=['cancel', 'menu'], state='*')
 async def cancel(message: types.Message, state: FSMContext):
     await state.finish()
-    await message.answer('Отмена действия')
+    await message.answer('Вы вернулись в главное меню', reply_markup=kb.menu)
 
 
 @dp.message_handler(lambda message: message.text == 'Назад', state=RefundStates)
