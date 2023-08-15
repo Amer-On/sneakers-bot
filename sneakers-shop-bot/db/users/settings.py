@@ -74,6 +74,11 @@ async def get_important_user_settings(conn: asyncpg.Connection, user_id: int) ->
 
 
 @connect_to_db
+async def unregister_user(conn: asyncpg.Connection, user_id: int):
+    await conn.execute(f'DELETE FROM {TABLE_NAME} WHERE user_id = $1', user_id)
+
+
+@connect_to_db
 async def update_user_settings(conn: asyncpg.Connection,
                                user_id: int,
                                nominal: str,

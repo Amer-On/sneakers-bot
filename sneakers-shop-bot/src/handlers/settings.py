@@ -19,6 +19,12 @@ from src.handlers.assortment_navigation import offer_shoes
 from src.misc import bot
 
 
+@dp.message_handler(commands='unreg')
+async def unreg_cmd(message: types.Message):
+    await db.unregister_user(message.from_user.id)
+    await message.answer('Вы успешно удалили свой профиль')
+
+
 @dp.message_handler(lambda message: message.text == commands.cancel, state=SettingsStates.nominal)
 async def settings_cancel(message: types.Message, state: FSMContext):
     await state.finish()
