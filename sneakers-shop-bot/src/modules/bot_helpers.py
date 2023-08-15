@@ -8,6 +8,7 @@ from aiogram.types.message import ContentType
 
 from src import messages
 from src.misc import bot
+from src.keyboards.settings import contact_methods_meta_reversed, payment_methods_meta_reversed
 import db
 
 
@@ -53,3 +54,20 @@ async def remove_keyboard(message: types.Message, message_text: str | None = Non
     if not message_text:
         message_text = message.text
     await update_text(message, message_text, keyboard=None)
+
+
+def prepare_user_settings(
+        nominal: str,
+        phone: str,
+        contact_method: str,
+        address: str,
+        payment_method: str):
+    return f'''Настройки пользователя ⚙️ 
+
+Имя: <em>{nominal}</em>
+Номер телефона: <em>{phone}</em>
+Метод связи: <em>{contact_methods_meta_reversed[contact_method]}</em>
+Адрес: <em>{address}</em>
+Метод оплаты: <em>{payment_methods_meta_reversed[f'payment_{payment_method}']}</em>
+'''
+

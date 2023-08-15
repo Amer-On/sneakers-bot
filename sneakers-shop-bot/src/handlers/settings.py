@@ -12,6 +12,7 @@ from src.messages.commands import callbacks_and_commands
 from src.messages import commands
 from src.states import SettingsStates
 from src.modules import validation
+from src.modules.bot_helpers import prepare_user_settings
 import src.keyboards as kb
 from src.handlers.general import start
 
@@ -81,6 +82,7 @@ async def settings_goback_contact(message: types.Message, state: FSMContext):
 async def contact_method_cb(callback: types.CallbackQuery, state: FSMContext):
     method = callback.data.split('_')[-1]
     asyncio.create_task(remove_keyboard(callback.message))
+    asyncio.create_task(callback.answer())
     async with state.proxy() as data:
         data['contact_method'] = method
 
@@ -116,6 +118,32 @@ async def settings_payment(callback: types.CallbackQuery, state: FSMContext):
     payment_method = callback.data.split('_')[1]
 
     async with state.proxy() as data:
+        data['payment_method'] = payment_method
+        phone = data['phone']
+        nominal = data['nominal']
+        address = data['address']
+        contact_method = data['contact_method']
+
+    asyncio.create_task(callback.message.delete())
+    asyncio.create_task(callback.answer())
+    await SettingsStates.confirm.set()
+    await callback.message.answer(prepare_user_settings(nominal, phone, contact_method, address, payment_method),
+                                  reply_markup=kb.confirm_settings)
+
+
+@dp.message_handler(lambda message: message.text == commands.change_payment_method, state=SettingsStates.confirm)
+async def settings_confirm_goback(message: types.Message):
+    await SettingsStates.payment_method.set()
+    await message.answer('Изменение метода оплаты 💰', reply_markup=kb.change_address)
+    await message.answer(messages.payment_method_second, reply_markup=kb.payment_types)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'confirm_settings', state=SettingsStates.confirm)
+async def confirm_settings(callback: types.CallbackQuery, state: FSMContext):
+    asyncio.create_task(remove_keyboard(callback.message))
+
+    async with state.proxy() as data:
+        payment_method = data['payment_method']
         phone = data['phone']
         nominal = data['nominal']
         address = data['address']
@@ -123,9 +151,7 @@ async def settings_payment(callback: types.CallbackQuery, state: FSMContext):
 
     user_id = callback.from_user.id
     user_link = callback.from_user.url
-    asyncio.create_task(state.finish())
-    asyncio.create_task(callback.message.delete())
-    asyncio.create_task(callback.answer())
+    await state.finish()
     await callback.message.answer("Ваши данные успешно сохранены, приятного пользования", reply_markup=kb.menu)
     if await db.get_user_settings(user_id):
         await db.update_user_settings(user_id, nominal, phone, address, payment_method, contact_method)
@@ -138,6 +164,21 @@ async def settings_edition_cb(callback: types.CallbackQuery):
     asyncio.create_task(callback.answer())
     await settings_edition(callback.message)
     await delete_messages(callback.from_user.id, callback.message.message_id)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'restart_registration', state=SettingsStates.confirm)
+async def settings_restart_cb(callback: types.CallbackQuery):
+    asyncio.create_task(callback.answer())
+    asyncio.create_task(remove_keyboard(callback.message))
+    await settings_edition(callback.message)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'cancel_registration', state=SettingsStates.confirm)
+async def settings_restart_cb(callback: types.CallbackQuery, state: FSMContext):
+    asyncio.create_task(callback.answer())
+    asyncio.create_task(remove_keyboard(callback.message))
+    await callback.message.answer("Регистрация отменена, возвращение в главное меню", reply_markup=kb.menu)
+    await state.finish()
 
 
 @dp.message_handler(state=SettingsStates)

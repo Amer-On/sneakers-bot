@@ -7,3 +7,4 @@ class SettingsStates(StatesGroup):
     contact_method = State()
     address = State()
     payment_method = State()
+    confirm = State()
