@@ -8,7 +8,14 @@ delete_message = "Закрыть ❌"
 remove_keyboard = "Убрать клавиатуру"
 order = "Заказать"
 back = 'Назад'
+
+# MENU GOBACK COMMANDS
 cancel = 'Отмена'
+change_name = 'Изменить имя'
+change_phone = 'Изменить номер телефона ☎️'
+change_contact_method = 'Изменить метод связи 📞'
+change_address = 'Изменить адрес 🏠'
+change_payment_method = 'Изменить метод оплаты 💰'
 
 
 # CALLBACK DATA FORMERS

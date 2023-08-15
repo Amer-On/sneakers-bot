@@ -9,25 +9,50 @@ from src import messages
 from src.modules.bot_helpers import delete_messages, remove_keyboard
 from src.misc import dp
 from src.messages.commands import callbacks_and_commands
+from src.messages import commands
 from src.states import SettingsStates
 from src.modules import validation
 import src.keyboards as kb
+from src.handlers.general import start
+
+
+@dp.message_handler(lambda message: message.text == commands.cancel, state=SettingsStates.nominal)
+async def settings_cancel(message: types.Message, state: FSMContext):
+    await state.finish()
+    await message.answer("Изменение настроек отменено")
+
+    await start(message)
+
+
+@dp.message_handler(lambda message: message.text == commands.change_name, state=SettingsStates.phone_number)
+async def settings_backto_name(message: types.Message):
+    await settings_edition(message)
+
+
+@dp.message_handler(lambda message: message.text == commands.change_phone, state=SettingsStates.contact_method)
+async def settings_backto_phone(message: types.Message):
+    await SettingsStates.phone_number.set()
+    await message.answer(messages.phone_change,
+                         reply_markup=kb.change_name)
 
 
 @dp.message_handler(lambda x: x.text == callbacks_and_commands['settings'])
 async def settings_edition(message: types.Message):
-    asyncio.create_task(SettingsStates.nominal.set())
-    await message.answer(messages.nominal, reply_markup=ReplyKeyboardRemove())
+    await SettingsStates.nominal.set()
+    await message.answer(messages.nominal,
+                         reply_markup=kb.cancel)
 
 
 @dp.message_handler(state=SettingsStates.nominal)
-async def settings_nominal(message: types.Message, state: FSMContext):
-    nominal = message.text
-    async with state.proxy() as data:
-        data['nominal'] = nominal
+async def settings_nominal(message: types.Message, state: FSMContext, is_change: bool = False):
+    if not is_change:
+        nominal = message.text
+        async with state.proxy() as data:
+            data['nominal'] = nominal
+        await message.answer(messages.phone(nominal))
 
-    asyncio.create_task(SettingsStates.phone_number.set())
-    await message.answer(messages.phone(nominal))
+    await SettingsStates.phone_number.set()
+    await message.answer(messages.phone_change, reply_markup=kb.change_name)
 
 
 @dp.message_handler(state=SettingsStates.phone_number)
@@ -36,15 +61,20 @@ async def settings_phone(message: types.Message, state: FSMContext):
     if validation.is_valid_phone(phone):
         async with state.proxy() as data:
             data['phone'] = phone
-        asyncio.create_task(SettingsStates.contact_method.set())
-        await message.answer("Номер телефона успешно сохранён")
-        await message.answer(messages.contact_method, reply_markup=kb.payment_method)
+        await SettingsStates.contact_method.set()
+        await message.answer(messages.contact_method_first, reply_markup=kb.change_phone)
+        await message.answer(messages.contact_method_second, reply_markup=kb.payment_method)
     else:
         await message.answer('Введённый вами номер телефона не является корректным')
         await message.answer('Пожалуйста введите ваш номер телефона в формате +7(xxx)xxx-xx-xx')
 
 
 contact_method_regexp = r'settings_contact_([^_]*)'
+
+
+@dp.message_handler(lambda message: message.text == commands.change_phone, state=SettingsStates.contact_method)
+async def settings_goback_contact(message: types.Message, state: FSMContext):
+    await settings_nominal(message, state, is_change=True)
 
 
 @dp.callback_query_handler(regexp=contact_method_regexp, state=SettingsStates.contact_method)
@@ -54,8 +84,15 @@ async def contact_method_cb(callback: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['contact_method'] = method
 
-    asyncio.create_task(SettingsStates.address.set())
-    await callback.message.answer(messages.address)
+    await SettingsStates.address.set()
+    await callback.message.answer(messages.address, reply_markup=kb.change_contact_method)
+
+
+@dp.message_handler(lambda message: message.text == commands.change_contact_method, state=SettingsStates.address)
+async def settings_goback_address(message: types.Message, state: FSMContext):
+    await SettingsStates.contact_method.set()
+    await message.answer('Изменение метода связи 📞', reply_markup=kb.change_phone)
+    await message.answer(messages.contact_method_second, reply_markup=kb.payment_method)
 
 
 @dp.message_handler(state=SettingsStates.address)
@@ -63,10 +100,15 @@ async def settings_address(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['address'] = message.text
 
-    kb_ = kb.payment_types
+    await SettingsStates.payment_method.set()
+    await message.answer(messages.payment_method_first, reply_markup=kb.change_address)
+    await message.answer(messages.payment_method_second, reply_markup=kb.payment_types)
 
-    asyncio.create_task(SettingsStates.payment_method.set())
-    await message.answer(messages.payment_method, reply_markup=kb_)
+
+@dp.message_handler(lambda message: message.text == commands.change_address, state=SettingsStates.payment_method)
+async def settings_goback_payment(message: types.Message, state: FSMContext):
+    await SettingsStates.address.set()
+    await message.answer(messages.address_change, reply_markup=kb.change_contact_method)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('payment_'), state=SettingsStates.payment_method)
@@ -97,3 +139,7 @@ async def settings_edition_cb(callback: types.CallbackQuery):
     await settings_edition(callback.message)
     await delete_messages(callback.from_user.id, callback.message.message_id)
 
+
+@dp.message_handler(state=SettingsStates)
+async def delete_redundant_message(message: types.Message):
+    await message.delete()
