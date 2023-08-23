@@ -19,6 +19,11 @@ async def start(message: types.Message):
     await message.answer(messages.greeting, reply_markup=kb.menu)
 
 
+@dp.message_handler(commands=['help', 'helpme', 'howto'])
+async def helpme_cmd(message: types.Message):
+    await message.answer(messages.helpme)
+
+
 @dp.message_handler(commands=['cancel', 'menu'], state='*')
 async def cancel(message: types.Message, state: FSMContext):
     await state.finish()

@@ -19,7 +19,7 @@ from ..modules.bot_helpers import update_text
 @dp.message_handler(lambda x: x.text == callbacks_and_commands['assortment_search'])
 async def assortment_search(message: types.Message, state: FSMContext):
     await AssortmentStates.search.set()
-    await message.answer("В ответном сообщении введите поисковую строку", reply_markup=ReplyKeyboardRemove())
+    await message.answer("Напишите название модели👟", reply_markup=ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=AssortmentStates.search)

@@ -30,7 +30,8 @@ payment_methods_meta_reversed = {v: k for k, v in payment_methods_meta.items()}
 
 payment_types = InlineKeyboardMarkup()
 for method, method_type in payment_methods_meta.items():
-    payment_types.add(InlineKeyboardButton(method, callback_data=method_type))
+    if method_type != 'payment_cash':
+        payment_types.add(InlineKeyboardButton(method, callback_data=method_type))
 
 
 cancel = ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton(commands.cancel))
