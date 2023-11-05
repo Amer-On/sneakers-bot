@@ -8,7 +8,7 @@ TABLE_NAME = 'brands'
 @connect_to_db
 async def create_brands_table(conn: asyncpg.Connection):
     await conn.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-    name VARCHAR(15) PRIMARY KEY
+    name VARCHAR(50) PRIMARY KEY
     )""")
 
 

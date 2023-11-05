@@ -9,8 +9,8 @@ TABLE_NAME = 'prices'
 @connect_to_db
 async def create_prices_table(conn: asyncpg.Connection):
     await conn.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-    brand VARCHAR,
-    model VARCHAR,
+    brand VARCHAR(50),
+    model VARCHAR(50),
     price INT,
     FOREIGN KEY (brand, model) REFERENCES {MODELS_TABLE_NAME}(brand, model),
     CONSTRAINT pk_{TABLE_NAME} PRIMARY KEY ( brand, model )

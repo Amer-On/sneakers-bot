@@ -28,8 +28,8 @@ async def create_orders_table(conn: asyncpg.Connection):
         user_id BIGINT,
         order_id SERIAL,
         
-        brand VARCHAR,
-        model VARCHAR,
+        brand VARCHAR(50),
+        model VARCHAR(50),
         size INT,
         amount INT DEFAULT 1,
         status VARCHAR DEFAULT 'MODERATION',

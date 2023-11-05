@@ -9,8 +9,8 @@ TABLE_NAME = 'stock'
 @connect_to_db
 async def create_stock_table(conn: asyncpg.Connection):
     await conn.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-    brand VARCHAR(15),
-    model VARCHAR(15),
+    brand VARCHAR(50),
+    model VARCHAR(50),
     size INT,
     amount INT DEFAULT 100,
     FOREIGN KEY (brand, model) REFERENCES {models.TABLE_NAME}(brand, model),
